@@ -5,7 +5,9 @@
   "scripts": {},
   "private": true,
   "devDependencies": {
+    "@nestjs/schematics": "^11.0.0",
     "@nx/js": "22.6.3",
+    "@nx/nest": "^22.6.3",
     "@nx/react": "^22.6.3",
     "@nx/workspace": "22.6.3",
     "nx": "22.6.3"

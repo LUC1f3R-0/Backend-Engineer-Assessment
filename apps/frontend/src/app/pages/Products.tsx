@@ -1,20 +1,18 @@
 import React from 'react'
-import Button from '../components/ui/Button'
-import SearchBar from '../components/products/SearchBar'
+import ProductFilterToolbar from '../components/products/ProductFilterToolbar'
 import Card from '../components/ui/Card'
-import CategoryList from '../components/products/CategoryList'
-import MinMaxPrice from '../components/products/MinMaxPrice'
 
 const Products = () => {
   return (
-    <div>
-      <h1>product page</h1>
-      <SearchBar/>
-      <Button/>
-      <Card/>
-      <CategoryList/>
-      <MinMaxPrice/>
-    </div>
+    <main className="bg-gray-50">
+      <div className="mx-auto px-4 py-6">
+        <h1 className="mb-4 text-xl font-semibold text-gray-900">Products</h1>
+        <ProductFilterToolbar />
+        <div className="mt-8 flex flex-wrap gap-6">
+          <Card />
+        </div>
+      </div>
+    </main>
   )
 }
 

@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 body {
-  margin: 50px 50px;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  margin: 0px 90px;
+  /* display: flex; */
+  /* place-items: center; */
+  /* min-width: 320px; */
 }
 /* You can add global styles to this file, and also import other style files */

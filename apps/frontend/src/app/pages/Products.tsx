@@ -1,8 +1,18 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import axiosInstance from '../configs/api'
 import ProductFilterToolbar from '../components/products/ProductFilterToolbar'
 import Card from '../components/ui/Card'
 
 const Products = () => {
+  useEffect(() => {
+    axiosInstance
+      .get('/api/products')
+      .then((res) => {
+        console.log(res.data.data)
+      })
+      .catch(console.error)
+  }, [])
+
   return (
     <main className="bg-gray-50">
       <div className="mx-auto px-4 py-6">

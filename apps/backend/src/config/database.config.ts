@@ -1,7 +1,11 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { OrderItem } from '../modules/orders/entities/order-item.entity';
+import { Order } from '../modules/orders/entities/order.entity';
+import { Product } from '../modules/products/entities/product.entity';
 
 function resolveBackendRoot(): string {
   const cwd = process.cwd();
@@ -39,6 +43,13 @@ export function getDataSourceOptions(): DataSourceOptions {
   return {
     ...getTypeOrmConfig(),
     migrations: [migrationGlob],
+  };
+}
+
+export function getNestTypeOrmConfig(): TypeOrmModuleOptions {
+  return {
+    ...getTypeOrmConfig(),
+    entities: [Product, Order, OrderItem],
   };
 }
 

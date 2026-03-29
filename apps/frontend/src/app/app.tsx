@@ -10,6 +10,7 @@ export function App() {
       <Route element={<RootLayout />}>
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/search" element={<Products />} />
       </Route>
       <Route path="/orders" element={<Order />} />
 

@@ -2,7 +2,13 @@
   "name": "@mo.lk-assessment/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "migration:run": "cd apps/backend && npx typeorm-ts-node-commonjs -d ./src/config/database.config.ts migration:run",
+    "migration:revert": "cd apps/backend && npx typeorm-ts-node-commonjs -d ./src/config/database.config.ts migration:revert",
+    "migration:generate": "cd apps/backend && npx typeorm-ts-node-commonjs -d ./src/config/database.config.ts migration:generate ./src/migrations/MigrationName",
+    "migration:create": "cd apps/backend && npx typeorm migration:create ./src/migrations/MigrationName",
+    "seed:run": "cd apps/backend && npx ts-node --project tsconfig.app.json -r reflect-metadata ./src/seeds/run-seed.ts"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -41,6 +47,7 @@
     "nx": "22.6.3",
     "postcss": "8.4.38",
     "prettier": "~3.6.2",
+    "ts-node": "^10.9.2",
     "tailwindcss": "3.4.3",
     "tslib": "^2.3.0",
     "typescript": "~5.9.2",

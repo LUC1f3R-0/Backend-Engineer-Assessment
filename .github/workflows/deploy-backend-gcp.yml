@@ -23,10 +23,12 @@ concurrency:
 
 env:
   NODE_VERSION: '20'
+  IMAGE_NAME: backend-api
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,56 +45,57 @@ jobs:
       - name: Lint backend
         run: npx nx lint backend
 
-      - name: Authenticate to Google Cloud (Workload Identity Federation)
-        uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
-      - name: Set up Cloud SDK
+      - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
 
       - name: Build Docker image
         env:
-          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/backend-api
+          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}
         run: |
-          docker build -f apps/backend/Dockerfile \
-            -t "${IMAGE_BASE}:${{ github.sha }}" \
+          docker build \
+            -f apps/backend/Dockerfile \
+            -t "${IMAGE_BASE}:${GITHUB_SHA}" \
             -t "${IMAGE_BASE}:latest" \
             .
 
       - name: Push Docker image
         env:
-          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/backend-api
+          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}
         run: |
-          docker push "${IMAGE_BASE}:${{ github.sha }}"
+          docker push "${IMAGE_BASE}:${GITHUB_SHA}"
           docker push "${IMAGE_BASE}:latest"
 
       - name: Deploy to Cloud Run
         env:
-          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/backend-api
+          IMAGE_BASE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}
         run: |
-          # Deploy SHA-tagged image (immutable reference for this commit).
-          # Non-secret env vars (adjust values or move to Secret Manager as needed):
-          #   NODE_ENV, SWAGGER_ENABLED, TYPEORM_LOGGING, CORS_ORIGINS (non-secret list of origins)
-          # Secrets (DB_PASSWORD, X_API_KEY, etc.): prefer Secret Manager + --set-secrets, not env in CI.
-          # Optional: run DB migrations outside this workflow (not enabled here by default).
-          gcloud run deploy ${{ vars.CLOUD_RUN_SERVICE }} \
-            --image "${IMAGE_BASE}:${{ github.sha }}" \
-            --region ${{ vars.GCP_REGION }} \
-            --project ${{ vars.GCP_PROJECT_ID }} \
+          gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
+            --image "${IMAGE_BASE}:${GITHUB_SHA}" \
+            --region "${{ vars.GCP_REGION }}" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
             --platform managed \
             --quiet \
-            --set-env-vars="NODE_ENV=production,SWAGGER_ENABLED=false,TYPEORM_LOGGING=false"
-          # Add CORS_ORIGINS, DB_*, X_API_KEY via Console, a follow-up gcloud --update-env-vars / --set-secrets,
-          # or extend this step once values live in GitHub Variables / Secret Manager references.
+            --update-env-vars "NODE_ENV=production"
 
-      # Alternative (not default): long-lived JSON key — store as GitHub Secret and uncomment:
-      # - uses: google-github-actions/auth@v2
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_SA_KEY_JSON }}
+          # Optional: add non-secret runtime env vars later, for example:
+          # gcloud run services update "${{ vars.CLOUD_RUN_SERVICE }}" \
+          #   --region "${{ vars.GCP_REGION }}" \
+          #   --project "${{ vars.GCP_PROJECT_ID }}" \
+          #   --update-env-vars "SWAGGER_ENABLED=false,TYPEORM_LOGGING=false,CORS_ORIGINS=https://your-frontend.example.com"
+
+          # Optional: attach secrets from Secret Manager later, for example:
+          # gcloud run services update "${{ vars.CLOUD_RUN_SERVICE }}" \
+          #   --region "${{ vars.GCP_REGION }}" \
+          #   --project "${{ vars.GCP_PROJECT_ID }}" \
+          #   --update-secrets "DB_PASSWORD=DB_PASSWORD:latest,X_API_KEY=X_API_KEY:latest"

@@ -22,7 +22,7 @@ const Products = () => {
       <div className="mx-auto px-4 py-6">
         <h1 className="mb-4 text-xl font-semibold text-gray-900">Products</h1>
         <ProductFilterToolbar/>
-        <div className="mt-8 flex flex-wrap gap-6">
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <Card key={product.id} product={product} />
           ))}

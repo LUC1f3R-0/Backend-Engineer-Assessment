@@ -24,15 +24,16 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  setupSwagger(app);
+  {process.env.SWAGGER_ENABLED && setupSwagger(app);}
 
-  const port = Number(process.env.PORT) || 3000;
-  await app.listen(port);
+  const port = Number(process.env.PORT) || 8080;
+  await app.listen(port, process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
+
   Logger.log(`CORS allowed origins: ${getCorsOrigins().join(', ')}`);
   Logger.log(
-    `🚀 Application is running on ${process.env.NODE_ENV}: http://localhost:${port}/${globalPrefix}`,
+    `Application is running on ${process.env.NODE_ENV}: http${process.env.NODE_ENV === 'production' ? 's' : ''}://${process.env.HOST || 'localhost'}:${port}/${globalPrefix}`,
   );
-  Logger.log(`📚 Swagger UI: ${getSwaggerUiUrl(port, globalPrefix)}`);
+  Logger.log(`Swagger UI: ${getSwaggerUiUrl(port, globalPrefix)}`);
 }
 
 bootstrap();

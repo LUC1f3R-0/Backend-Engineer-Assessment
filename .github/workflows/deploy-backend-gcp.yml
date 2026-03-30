@@ -89,6 +89,26 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      # Fails before docker push if WIF cannot impersonate the SA or the email/project is wrong.
+      # "Gaia id not found" = that email is not a live service account Google can resolve, or WIF is not bound to impersonate it.
+      - name: Verify service account exists and credentials refresh
+        run: |
+          set -euo pipefail
+          echo "Checking service account exists in project ${GCP_PROJECT_ID}..."
+          if ! gcloud iam service-accounts describe "${GCP_SERVICE_ACCOUNT}" \
+            --project="${GCP_PROJECT_ID}" \
+            --format='value(email)' >/dev/null; then
+            echo "::error::No service account ${GCP_SERVICE_ACCOUNT} in project ${GCP_PROJECT_ID}. Use the exact email from GCP → IAM → Service accounts; GCP_PROJECT_ID must be that project."
+            exit 1
+          fi
+          echo "Checking access token (same path Docker uses for Artifact Registry)..."
+          if ! out=$(gcloud auth print-access-token 2>&1); then
+            echo "::error::Credential refresh failed (Gaia id not found / impersonation). Fix: (1) Set GCP_SERVICE_ACCOUNT to the real deployer SA email. (2) In GCP, bind WIF to this SA: principalSet:repository:OWNER/REPO:ref:refs/heads/main (or your branch) with roles/iam.workloadIdentityUser on ${GCP_SERVICE_ACCOUNT}."
+            echo "$out"
+            exit 1
+          fi
+          echo "OK."
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
 

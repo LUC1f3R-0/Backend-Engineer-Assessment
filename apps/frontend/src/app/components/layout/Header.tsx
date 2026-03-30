@@ -1,11 +1,14 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { PAGE_SIZE } from '../ui/Pagination'
+
+const PRODUCTS_HOME = `/products?page=1&limit=${PAGE_SIZE}`
 
 const Header = () => {
   return (
     <header className="border-b border-gray-200 bg-gray-100">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <Link to="/products" className="text-gray-900 hover:text-gray-700" aria-label="Home">
+        <Link to={PRODUCTS_HOME} className="text-gray-900 hover:text-gray-700" aria-label="Home">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path
               strokeLinecap="round"

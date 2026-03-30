@@ -35,7 +35,19 @@ export class ProductItemDto {
   updatedAt: Date;
 }
 
-export class ProductsListResponseDto {
+export class ProductsPageResponseDto {
   @ApiProperty({ type: [ProductItemDto] })
-  data: ProductItemDto[];
+  items: ProductItemDto[];
+
+  @ApiProperty({ example: 50 })
+  total: number;
+
+  @ApiProperty({ example: 1 })
+  page: number;
+
+  @ApiProperty({ example: 8 })
+  limit: number;
+
+  @ApiProperty({ example: 7 })
+  totalPages: number;
 }

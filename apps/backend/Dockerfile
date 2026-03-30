@@ -2,7 +2,7 @@
 #   docker build -f apps/backend/Dockerfile .
 #
 # Run (set env for DB, X_API_KEY, CORS, etc.):
-#   docker run --rm -p 3000:3000 --env-file apps/backend/.env <image>
+#   docker run --rm -p 8080:8080 --env-file apps/backend/.env <image>
 
 # --- Install dependencies (cached layer when package files unchanged) ---
 FROM node:20-bookworm-slim AS deps
@@ -23,7 +23,8 @@ FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+# Cloud Run injects PORT (often 8080); default matches Cloud Run when not overridden.
+ENV PORT=8080
 
 RUN groupadd --gid 1001 nodejs \
   && useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nestjs
@@ -38,6 +39,6 @@ RUN npm ci --omit=dev \
 
 USER nestjs
 
-EXPOSE 3000
+EXPOSE 8080
 
 CMD ["node", "main.js"]

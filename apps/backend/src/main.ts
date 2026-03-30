@@ -31,10 +31,12 @@ async function bootstrap() {
   }
 
   const port = Number(process.env.PORT) || 8080;
-  await app.listen(
-    port,
-    process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost',
-  );
+  // Cloud Run sets K_SERVICE and PORT; the proxy must reach a listener on all interfaces (not localhost-only).
+  const listenHost =
+    process.env.K_SERVICE || process.env.NODE_ENV === 'production'
+      ? '0.0.0.0'
+      : 'localhost';
+  await app.listen(port, listenHost);
 
   Logger.log(`CORS allowed origins: ${getCorsOrigins().join(', ')}`);
   Logger.log(

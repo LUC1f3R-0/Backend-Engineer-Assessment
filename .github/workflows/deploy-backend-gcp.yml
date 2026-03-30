@@ -29,16 +29,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
-      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-      GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
-      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION || vars.GCP_REGION }}
+      GAR_REPOSITORY: ${{ secrets.GAR_REPOSITORY || vars.GAR_REPOSITORY }}
+      CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE || vars.CLOUD_RUN_SERVICE }}
+      GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate required GitHub Variables / Secrets
+        run: |
+          set -euo pipefail
+          MISSING=()
+          [ -z "${GCP_PROJECT_ID:-}" ] && MISSING+=("GCP_PROJECT_ID")
+          [ -z "${GCP_REGION:-}" ] && MISSING+=("GCP_REGION")
+          [ -z "${GAR_REPOSITORY:-}" ] && MISSING+=("GAR_REPOSITORY")
+          [ -z "${CLOUD_RUN_SERVICE:-}" ] && MISSING+=("CLOUD_RUN_SERVICE")
+          [ -z "${GCP_WIF_PROVIDER:-}" ] && MISSING+=("GCP_WIF_PROVIDER")
+          [ -z "${GCP_SERVICE_ACCOUNT:-}" ] && MISSING+=("GCP_SERVICE_ACCOUNT")
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "::error title=Missing configuration::The following are not set (use Repository Variables or Secrets): ${MISSING[*]}"
+            echo "Configure each under: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "All required deploy configuration values are present."
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,15 +68,6 @@ jobs:
 
       - name: Lint backend
         run: npx nx lint backend
-
-      - name: Require GCP variables
-        run: |
-          [ -n "$GCP_PROJECT_ID" ] || { echo "::error::Missing GCP_PROJECT_ID"; exit 1; }
-          [ -n "$GCP_REGION" ] || { echo "::error::Missing GCP_REGION"; exit 1; }
-          [ -n "$GAR_REPOSITORY" ] || { echo "::error::Missing GAR_REPOSITORY"; exit 1; }
-          [ -n "$CLOUD_RUN_SERVICE" ] || { echo "::error::Missing CLOUD_RUN_SERVICE"; exit 1; }
-          [ -n "$GCP_WIF_PROVIDER" ] || { echo "::error::Missing GCP_WIF_PROVIDER"; exit 1; }
-          [ -n "$GCP_SERVICE_ACCOUNT" ] || { echo "::error::Missing GCP_SERVICE_ACCOUNT"; exit 1; }
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -103,3 +111,15 @@ jobs:
             --platform managed \
             --quiet \
             --update-env-vars "NODE_ENV=production"
+
+          # Optional: add non-secret runtime env vars later, for example:
+          # gcloud run services update "${CLOUD_RUN_SERVICE}" \
+          #   --region "${GCP_REGION}" \
+          #   --project "${GCP_PROJECT_ID}" \
+          #   --update-env-vars "SWAGGER_ENABLED=false,TYPEORM_LOGGING=false,CORS_ORIGINS=https://your-frontend.example.com"
+
+          # Optional: attach secrets from Secret Manager later, for example:
+          # gcloud run services update "${CLOUD_RUN_SERVICE}" \
+          #   --region "${GCP_REGION}" \
+          #   --project "${GCP_PROJECT_ID}" \
+          #   --update-secrets "DB_PASSWORD=DB_PASSWORD:latest,X_API_KEY=X_API_KEY:latest"

@@ -151,4 +151,4 @@ jobs:
           # gcloud run services update "${CLOUD_RUN_SERVICE}" \
           #   --region "${GCP_REGION}" \
           #   --project "${GCP_PROJECT_ID}" \
-          #   --update-secrets "DB_PASSWORD=DB_PASSWORD:latest,X_API_KEY=X_API_KEY:latest"
+          #   --update-secrets "DB_PASSWORD=DB_PASSWORD:latest,X_API_KEY=X_API_KEY:latest" 

@@ -35,6 +35,8 @@ jobs:
       CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE || vars.CLOUD_RUN_SERVICE }}
       GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
+      # gcloud reads this; avoids `gcloud config set project` (which can fail WIF impersonation refresh).
+      CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID || vars.GCP_PROJECT_ID }}
 
     steps:
       - name: Checkout
@@ -55,6 +57,13 @@ jobs:
             echo "Configure each under: Settings → Secrets and variables → Actions"
             exit 1
           fi
+          case "${GCP_SERVICE_ACCOUNT}" in
+            *@*.iam.gserviceaccount.com|*@developer.gserviceaccount.com) ;;
+            *)
+              echo "::error::GCP_SERVICE_ACCOUNT must be a service account email (e.g. deployer@PROJECT_ID.iam.gserviceaccount.com). Gaia id not found usually means this value is wrong or the account was deleted."
+              exit 1
+              ;;
+          esac
           echo "All required deploy configuration values are present."
 
       - name: Setup Node.js
@@ -75,10 +84,10 @@ jobs:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
+      # Do not pass project_id here: that runs `gcloud config set project` and can trigger
+      # "Gaia id not found for email" when the service account email is invalid or WIF binding is wrong.
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ env.GCP_PROJECT_ID }}
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet

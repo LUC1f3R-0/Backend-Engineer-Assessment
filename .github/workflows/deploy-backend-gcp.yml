@@ -45,28 +45,23 @@ jobs:
       - name: Lint backend
         run: npx nx lint backend
 
-      - name: Require GCP WIF configuration
-        env:
-          WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
-          WIF_SA: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
-        run: |
-          if [ -z "${WIF_PROVIDER}" ] || [ -z "${WIF_SA}" ]; then
-            echo "::error::Set GCP_WIF_PROVIDER and GCP_SERVICE_ACCOUNT (Settings → Secrets and variables → Actions)."
-            echo "Use either Repository Variables or Repository Secrets with those exact names."
-            exit 1
-          fi
-
-      # WIF provider + deployer SA: set as repo Variables OR Secrets (Secrets take precedence if both exist).
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Require GCP region
+        run: |
+          if [ -z "${{ vars.GCP_REGION }}" ]; then
+            echo "::error::Missing GitHub Actions variable GCP_REGION"
+            exit 1
+          fi
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
@@ -99,15 +94,3 @@ jobs:
             --platform managed \
             --quiet \
             --update-env-vars "NODE_ENV=production"
-
-          # Optional: add non-secret runtime env vars later, for example:
-          # gcloud run services update "${{ vars.CLOUD_RUN_SERVICE }}" \
-          #   --region "${{ vars.GCP_REGION }}" \
-          #   --project "${{ vars.GCP_PROJECT_ID }}" \
-          #   --update-env-vars "SWAGGER_ENABLED=false,TYPEORM_LOGGING=false,CORS_ORIGINS=https://your-frontend.example.com"
-
-          # Optional: attach secrets from Secret Manager later, for example:
-          # gcloud run services update "${{ vars.CLOUD_RUN_SERVICE }}" \
-          #   --region "${{ vars.GCP_REGION }}" \
-          #   --project "${{ vars.GCP_PROJECT_ID }}" \
-          #   --update-secrets "DB_PASSWORD=DB_PASSWORD:latest,X_API_KEY=X_API_KEY:latest"

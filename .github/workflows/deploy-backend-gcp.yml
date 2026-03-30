@@ -45,11 +45,23 @@ jobs:
       - name: Lint backend
         run: npx nx lint backend
 
+      - name: Require GCP WIF configuration
+        env:
+          WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
+          WIF_SA: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "${WIF_PROVIDER}" ] || [ -z "${WIF_SA}" ]; then
+            echo "::error::Set GCP_WIF_PROVIDER and GCP_SERVICE_ACCOUNT (Settings → Secrets and variables → Actions)."
+            echo "Use either Repository Variables or Repository Secrets with those exact names."
+            exit 1
+          fi
+
+      # WIF provider + deployer SA: set as repo Variables OR Secrets (Secrets take precedence if both exist).
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER || vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT || vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2

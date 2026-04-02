@@ -27,11 +27,12 @@ jobs:
 
       - name: Build frontend
         run: npx nx build frontend
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_X_API_KEY: ${{ secrets.VITE_X_API_KEY }}
 
       - name: Deploy to Netlify
         run: npx netlify deploy --filter=frontend --prod --dir=dist/apps/frontend --no-build --site=$NETLIFY_SITE_ID --auth=$NETLIFY_AUTH_TOKEN
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
-          VITE_X_API_KEY: ${{ secrets.VITE_X_API_KEY }}

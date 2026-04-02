@@ -67,10 +67,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) 
             type="button"
             className="rounded-lg flex min-w-[2.25rem] items-center justify-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
             style={page === currentPage ? activeStyle : linkStyle}
-            onClick={() => {
-                console.log(page)
-              go(page)
-            }}
+            onClick={() => go(page)}
           >
             {page}
           </button>

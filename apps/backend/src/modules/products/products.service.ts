@@ -10,7 +10,24 @@ export class ProductsService {
     private readonly products: Repository<Product>,
   ) {}
 
-  findAll() {
-    return this.products.find();
+  /** @param limit capped at 8 */
+  async findPaged(page: number, limit: number) {
+    const safeLimit = Math.min(8, Math.max(1, limit));
+    const totalItems = await this.products.count();
+    const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const skip = (safePage - 1) * safeLimit;
+    const items = await this.products.find({
+      order: { createdAt: 'ASC' },
+      skip,
+      take: safeLimit,
+    });
+    return {
+      items,
+      page: safePage,
+      limit: safeLimit,
+      totalItems,
+      totalPages,
+    };
   }
 }

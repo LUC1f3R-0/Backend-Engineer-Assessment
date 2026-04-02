@@ -8,7 +8,6 @@ RUN npm ci
 COPY . .
 RUN npx nx run backend:build
 
-
 FROM builder AS runner
 
 WORKDIR /app

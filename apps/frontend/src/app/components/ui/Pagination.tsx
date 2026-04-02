@@ -21,6 +21,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) 
 
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
 
+
   return (
     <div
       className="col-span-12 mx-auto mt-12 grid grid-cols-4 grid-rows-2 items-center gap-3 px-4 py-4 pb-8 sm:flex sm:justify-center"
@@ -67,7 +68,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) 
             className="rounded-lg flex min-w-[2.25rem] items-center justify-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
             style={page === currentPage ? activeStyle : linkStyle}
             onClick={() => {
-              console.log(page)
+                console.log(page)
               go(page)
             }}
           >

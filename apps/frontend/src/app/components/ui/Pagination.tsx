@@ -11,9 +11,9 @@ const Pagination = () => {
         <a className="rounded-lg flex items-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
         href="/?page=2"
         style={{color: "rgb(3, 7, 18)", border: "1px solid rgb(229, 231, 235)", backgroundColor: "rgb(249, 250, 251)"}}><svg
-        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"
           aria-hidden="true" data-slot="icon" className="rotate-180 transform" height="16px">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
         </svg>Back</a></div>
     <div className="order-1 col-span-4 flex justify-center gap-3 sm:order-2"><a
         className="rounded-lg flex items-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
@@ -57,9 +57,9 @@ const Pagination = () => {
           border: "1px solid rgb(229, 231, 235)",
           backgroundColor: "rgb(249, 250, 251)"
         }}>Next
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"
           aria-hidden="true" data-slot="icon" height="16px">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"></path>
         </svg></a><a
         className="rounded-lg flex items-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
         href="/?page=12"

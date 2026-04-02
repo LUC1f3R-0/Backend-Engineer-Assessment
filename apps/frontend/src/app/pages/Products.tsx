@@ -4,13 +4,13 @@ import ProductFilterToolbar from '../components/products/ProductFilterToolbar'
 import Card from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import type { Product } from '../types/product'
+import Pagination from '../components/ui/Pagination'
 
 const Products = () => {
   const [products, setProducts] = React.useState<Product[]>([])
   const [loading, setLoading] = React.useState(true)
 
   useEffect(() => {
-    console.log("this is running first"),
     axiosInstance
       .get('/api/products')
       .then((res) => {

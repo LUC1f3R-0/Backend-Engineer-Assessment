@@ -10,6 +10,7 @@ const Products = () => {
   const [loading, setLoading] = React.useState(true)
 
   useEffect(() => {
+    console.log("this is running first"),
     axiosInstance
       .get('/api/products')
       .then((res) => {

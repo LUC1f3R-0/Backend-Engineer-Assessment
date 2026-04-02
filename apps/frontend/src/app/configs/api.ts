@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
+console.log(backendUrl)
+console.log("this is running second")
 const axiosInstance = axios.create({
   baseURL: backendUrl,
   timeout: 15000,

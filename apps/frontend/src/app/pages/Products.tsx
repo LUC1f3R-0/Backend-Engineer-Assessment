@@ -13,8 +13,8 @@ const Products = () => {
     axiosInstance
       .get('/api/products')
       .then((res) => {
-        setProducts(res.data.data)
-        console.log(res.data.data)
+        const data = res.data?.data
+        setProducts(Array.isArray(data) ? data : [])
       })
       .catch(console.error)
       .finally(() => setLoading(false))

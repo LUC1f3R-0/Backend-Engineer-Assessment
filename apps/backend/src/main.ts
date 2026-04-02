@@ -31,7 +31,6 @@ async function bootstrap() {
   }
 
   const port = Number(process.env.PORT) || 8080;
-  // Cloud Run sets K_SERVICE and PORT; the proxy must reach a listener on all interfaces (not localhost-only).
   const listenHost =
     process.env.K_SERVICE || process.env.NODE_ENV === 'production'
       ? '0.0.0.0'

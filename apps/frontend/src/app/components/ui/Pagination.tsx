@@ -14,18 +14,20 @@ const activeStyle = {
 } as const
 
 const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) => {
+  const pageCount = Math.max(1, totalPages)
+
   const go = (page: number) => {
-    const next = Math.min(Math.max(1, page), totalPages)
+    const next = Math.min(Math.max(1, page), pageCount)
     onPageChange(next)
   }
 
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
+  const pageNumbers = Array.from({ length: pageCount }, (_, i) => i + 1)
 
 
   return (
     <div
       className="col-span-12 mx-auto mt-12 grid grid-cols-4 grid-rows-2 items-center gap-3 px-4 py-4 pb-8 sm:flex sm:justify-center"
-      aria-label={`Pagination, ${totalPages} pages`}
+      aria-label={`Pagination, ${pageCount} pages`}
     >
       <div className="wt-button-font order-2 col-span-2 flex justify-end gap-2">
         <button
@@ -80,7 +82,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) 
           className="rounded-lg flex items-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
           style={linkStyle}
           onClick={() => go(currentPage + 1)}
-          disabled={currentPage >= totalPages}
+          disabled={currentPage >= pageCount}
         >
           Next
           <svg
@@ -99,8 +101,8 @@ const Pagination = ({ totalPages, currentPage, onPageChange }: PaginationProps) 
           type="button"
           className="rounded-lg flex items-center gap-2 border border-transparent px-3 py-1 transition duration-150 ease-in-out hover:border-wt-primary"
           style={linkStyle}
-          onClick={() => go(totalPages)}
-          disabled={currentPage >= totalPages}
+          onClick={() => go(pageCount)}
+          disabled={currentPage >= pageCount}
         >
           Last
         </button>

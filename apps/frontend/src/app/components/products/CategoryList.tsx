@@ -17,6 +17,7 @@ const CategoryList = () => {
         const next = new URLSearchParams(prev)
         if (active === slug) next.delete('categories')
         else next.set('categories', slug)
+        next.set('page', '1')
         return next
       },
       { replace: false },

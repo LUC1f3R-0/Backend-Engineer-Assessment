@@ -1,5 +1,6 @@
 import React, { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import axiosInstance from '../../configs/api'
 
 type SortParam =
   | 'featured'
@@ -16,13 +17,6 @@ const SORT_OPTIONS: { value: SortParam; label: string }[] = [
   { value: 'newest', label: 'Newest' },
   { value: 'name_asc', label: 'Name: A–Z' },
   { value: 'name_desc', label: 'Name: Z–A' },
-]
-
-const CATEGORIES: { value: string; label: string }[] = [
-  { value: '', label: 'All categories' },
-  { value: 'intro-web', label: 'Intro to Web' },
-  { value: 'react-basics', label: 'React basics' },
-  { value: 'node-api', label: 'Node API' },
 ]
 
 const INPUT_BASE =
@@ -44,10 +38,6 @@ function parseSort(raw: string | null): SortParam {
   return 'featured'
 }
 
-function logListingDestination(next: URLSearchParams) {
-  console.log(Object.fromEntries(next.entries()))
-}
-
 const ProductFilterToolbar = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -60,6 +50,7 @@ const ProductFilterToolbar = () => {
   const [draftSort, setDraftSort] = useState<SortParam>('featured')
   const [draftInStockOnly, setDraftInStockOnly] = useState(false)
   const [priceError, setPriceError] = useState('')
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([])
 
   useEffect(() => {
     const sp = new URLSearchParams(paramsKey)
@@ -71,6 +62,20 @@ const ProductFilterToolbar = () => {
     const ins = sp.get('inStock')
     setDraftInStockOnly(ins === '1' || ins === 'true')
   }, [paramsKey])
+
+  useEffect(() => {
+    let cancelled = false
+    axiosInstance
+      .get<{ data: string[] }>('/api/products/categories')
+      .then((res) => {
+        const list = res.data?.data
+        if (!cancelled && Array.isArray(list)) setCategoryOptions(list)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function validatePriceRange() {
     const minS = draftMin.trim()
@@ -113,7 +118,6 @@ const ProductFilterToolbar = () => {
     if (!validatePriceRange()) return
     const next = new URLSearchParams(searchParams)
     applyDiscoveryToParams(next)
-    logListingDestination(next)
     navigate({ pathname: '/products', search: next.toString() })
   }
 
@@ -123,7 +127,6 @@ const ProductFilterToolbar = () => {
     if (value !== 'featured') next.set('sort', value)
     else next.delete('sort')
     next.set('page', '1')
-    logListingDestination(next)
     navigate({ pathname: '/products', search: next.toString() })
   }
 
@@ -196,9 +199,12 @@ const ProductFilterToolbar = () => {
                 className={`${CONTROL_MD} pl-3 pr-8`}
                 style={SELECT_CHEVRON_STYLE}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value || 'all'} value={c.value}>
-                    {c.label}
+                <option value="" disabled>
+                  All categories
+                </option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>

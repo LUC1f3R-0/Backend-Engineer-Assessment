@@ -1,20 +1,44 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  clearPendingOrder,
+  createOrder,
+  writePendingOrder,
+  type OrderResponse,
+} from '../../api/orders.api'
 import { useCart } from '../../context/CartContext'
 
 const TAX_RATE = 0.075
+const DEFAULT_PAYMENT = 'cash_on_delivery'
 
 export default function CartModal() {
   const { lines, isOpen, closeCart, removeLine, setQuantity, clearCart } = useCart()
 
+  const [step, setStep] = useState<'cart' | 'checkout' | 'success'>('cart')
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [lastOrder, setLastOrder] = useState<OrderResponse | null>(null)
+
   useEffect(() => {
     if (!isOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeCart()
+      if (e.key === 'Escape' && !submitting) closeCart()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen, closeCart])
+  }, [isOpen, closeCart, submitting])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep('cart')
+      setFormError(null)
+      setLastOrder(null)
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -22,18 +46,64 @@ export default function CartModal() {
   const tax = subtotal * TAX_RATE
   const total = subtotal + tax
 
+  const goCheckout = () => {
+    if (lines.length === 0) return
+    setStep('checkout')
+    setFormError(null)
+  }
+
+  const confirmOrder = async () => {
+    if (lines.length === 0) return
+    const name = customerName.trim()
+    const phone = customerPhone.trim()
+    const addr = deliveryAddress.trim()
+    if (!name || !phone || !addr) {
+      setFormError('Please fill in name, phone, and delivery address.')
+      return
+    }
+    const idempotencyKey = crypto.randomUUID()
+    const body = {
+      idempotencyKey,
+      customerName: name,
+      customerPhone: phone,
+      customerEmail: customerEmail.trim() || undefined,
+      deliveryAddress: addr,
+      paymentMethod: DEFAULT_PAYMENT,
+      items: lines.map((l) => ({ productId: l.id, quantity: l.quantity })),
+    }
+    writePendingOrder({ idempotencyKey, requestBody: body })
+    setSubmitting(true)
+    setFormError(null)
+    try {
+      const res = await createOrder(body)
+      clearPendingOrder()
+      clearCart()
+      setLastOrder(res)
+      setStep('success')
+    } catch (e: unknown) {
+      console.error(e)
+      setFormError('Order could not be placed. You can retry from the bar at the bottom of the page.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const title =
+    step === 'success' ? 'Order placed' : step === 'checkout' ? 'Checkout' : 'Shopping Cart'
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Shopping cart"
+      aria-label={title}
     >
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
-        onClick={closeCart}
+        onClick={() => !submitting && closeCart()}
         aria-label="Close cart"
+        disabled={submitting}
       />
       <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-lg bg-gray-100 shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
@@ -46,12 +116,13 @@ export default function CartModal() {
               height={32}
               aria-hidden
             />
-            <h2 className="text-lg font-bold text-gray-800">Shopping Cart</h2>
+            <h2 className="text-lg font-bold text-gray-800">{title}</h2>
           </div>
           <button
             type="button"
-            onClick={closeCart}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+            onClick={() => !submitting && closeCart()}
+            disabled={submitting}
+            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
             aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -61,7 +132,100 @@ export default function CartModal() {
         </div>
 
         <div className="max-h-[calc(90vh-8rem)] overflow-y-auto p-4">
-          {lines.length === 0 ? (
+          {step === 'success' && lastOrder ? (
+            <div className="rounded-lg bg-white p-6 shadow">
+              <p className="text-gray-800">
+                Thank you! Your order <span className="font-mono text-sm">{lastOrder.id}</span> was
+                received.
+              </p>
+              <p className="mt-2 text-sm text-gray-600">
+                Total (from server): <span className="font-semibold">${lastOrder.totalAmount}</span>{' '}
+                · Payment: Cash on delivery
+              </p>
+              <button
+                type="button"
+                onClick={closeCart}
+                className="mt-6 rounded-lg bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </div>
+          ) : step === 'checkout' ? (
+            <div className="mx-auto max-w-md rounded-lg bg-white p-6 shadow">
+              <button
+                type="button"
+                onClick={() => !submitting && setStep('cart')}
+                disabled={submitting}
+                className="mb-4 text-sm text-blue-600 hover:underline disabled:opacity-50"
+              >
+                ← Back to cart
+              </button>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Full name
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                    autoComplete="name"
+                    disabled={submitting}
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Phone
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                    autoComplete="tel"
+                    disabled={submitting}
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Email <span className="font-normal text-gray-500">(optional)</span>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                    autoComplete="email"
+                    disabled={submitting}
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Delivery address
+                  <textarea
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    rows={3}
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                    disabled={submitting}
+                  />
+                </label>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Payment method</p>
+                  <p className="mt-1 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                    Cash on delivery
+                  </p>
+                </div>
+              </div>
+              {formError ? (
+                <p className="mt-3 text-sm text-red-700" role="alert">
+                  {formError}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={confirmOrder}
+                disabled={submitting}
+                className="mt-6 w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {submitting ? 'Placing order…' : 'Confirm order'}
+              </button>
+            </div>
+          ) : lines.length === 0 ? (
             <div className="rounded-lg bg-white p-8 text-center shadow">
               <img
                 src="/cart-icon.png"
@@ -228,14 +392,14 @@ export default function CartModal() {
                     <span>${tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold">
-                    <span>Total</span>
+                    <span>Total (estimate)</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
                 </div>
                 <button
                   type="button"
+                  onClick={goCheckout}
                   className="mt-4 w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700"
-                  disabled
                 >
                   Checkout
                 </button>

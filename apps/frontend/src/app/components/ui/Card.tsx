@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import type { Product } from '../../types/product'
 import { useCart } from '../../context/CartContext'
 
@@ -8,7 +7,7 @@ type CardProps = {
 }
 
 const Card = ({ product }: CardProps) => {
-  const { addToCart } = useCart()
+  const { addToCart, openCart } = useCart()
 
   return (
     <div className="flex h-full w-full flex-col bg-white rounded-lg overflow-hidden shadow-lg ring-4 ring-blue-500 ring-opacity-40">
@@ -51,12 +50,17 @@ const Card = ({ product }: CardProps) => {
               />
               Add to cart
             </button>
-            <Link
-              to={`/orders?product=${encodeURIComponent(product.id)}`}
-              className="inline-block whitespace-nowrap rounded bg-blue-500 px-3 py-2 text-center text-sm font-bold text-white hover:bg-blue-600"
+            <button
+              type="button"
+              disabled={product.stock <= 0}
+              onClick={() => {
+                addToCart(product)
+                openCart()
+              }}
+              className="inline-block whitespace-nowrap rounded bg-blue-500 px-3 py-2 text-center text-sm font-bold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Buy now
-            </Link>
+            </button>
           </div>
         </div>
       </div>

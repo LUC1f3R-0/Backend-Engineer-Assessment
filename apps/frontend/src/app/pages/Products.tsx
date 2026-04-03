@@ -18,6 +18,95 @@ function parsePage(raw: string | null): number {
   return n
 }
 
+function parsePriceString(p: string): number {
+  const n = parseFloat(p)
+  return Number.isFinite(n) ? n : 0
+}
+
+/** Axios params aligned with backend `GET /api/products` */
+function buildListingParams(searchParams: URLSearchParams): Record<string, string | number> {
+  const page = parsePage(searchParams.get('page'))
+  const params: Record<string, string | number> = {
+    page,
+    limit: PAGE_SIZE,
+  }
+
+  const q = searchParams.get('q')?.trim()
+  if (q) {
+    params.q = q
+  } else {
+    const search = searchParams.get('search')?.trim()
+    if (search) params.search = search
+  }
+
+  const cats = searchParams.get('categories')?.trim()
+  if (cats) params.categories = cats
+
+  const minP = searchParams.get('minPrice')?.trim()
+  if (minP) params.minPrice = minP
+
+  const maxP = searchParams.get('maxPrice')?.trim()
+  if (maxP) params.maxPrice = maxP
+
+  const ins = searchParams.get('inStock')
+  if (ins === '1' || ins === 'true') params.inStock = '1'
+
+  const sort = searchParams.get('sort')?.trim()
+  if (sort) params.sort = sort
+
+  return params
+}
+
+/** If API returns a legacy raw array, mirror backend filters client-side */
+function applyLegacyFilters(rows: Product[], sp: URLSearchParams): Product[] {
+  let out = rows
+  const cat = sp.get('categories')?.trim()
+  if (cat) out = out.filter((p) => p.category === cat)
+  const term = sp.get('q')?.trim() || sp.get('search')?.trim()
+  if (term) {
+    const t = term.toLowerCase()
+    out = out.filter(
+      (p) => p.name.toLowerCase().includes(t) || p.description.toLowerCase().includes(t),
+    )
+  }
+  const minS = sp.get('minPrice')?.trim()
+  if (minS) {
+    const n = parseFloat(minS)
+    if (Number.isFinite(n)) out = out.filter((p) => parsePriceString(p.price) >= n)
+  }
+  const maxS = sp.get('maxPrice')?.trim()
+  if (maxS) {
+    const n = parseFloat(maxS)
+    if (Number.isFinite(n)) out = out.filter((p) => parsePriceString(p.price) <= n)
+  }
+  const ins = sp.get('inStock')
+  if (ins === '1' || ins === 'true') out = out.filter((p) => p.stock > 0)
+  return out
+}
+
+function sortLegacy(rows: Product[], sp: URLSearchParams): Product[] {
+  const sort = sp.get('sort')?.trim() || 'featured'
+  const copy = [...rows]
+  switch (sort) {
+    case 'price_asc':
+      return copy.sort((a, b) => parsePriceString(a.price) - parsePriceString(b.price))
+    case 'price_desc':
+      return copy.sort((a, b) => parsePriceString(b.price) - parsePriceString(a.price))
+    case 'newest':
+      return copy.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    case 'name_asc':
+      return copy.sort((a, b) => a.name.localeCompare(b.name))
+    case 'name_desc':
+      return copy.sort((a, b) => b.name.localeCompare(a.name))
+    default:
+      return copy.sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      )
+  }
+}
+
 const Products = () => {
   const { openCart, uniqueItemCount } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,8 +115,9 @@ const Products = () => {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
+  const listingKey = searchParams.toString()
+
   const pageFromUrl = useMemo(() => parsePage(searchParams.get('page')), [searchParams])
-  const categoriesFromUrl = searchParams.get('categories') ?? ''
 
   useEffect(() => {
     const p = searchParams.get('page')
@@ -58,31 +148,31 @@ const Products = () => {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    const params: { page: number; limit: number; categories?: string } = {
-      page: pageFromUrl,
-      limit: PAGE_SIZE,
-    }
-    if (categoriesFromUrl) params.categories = categoriesFromUrl
+    const params = buildListingParams(searchParams)
 
     axiosInstance
-      .get('/api/products', { params })
+      .get('/api/products', {
+        params,
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      })
       .then((res) => {
         const body = res.data?.data as unknown
 
-        // Legacy: interceptor wraps an array as { data: Product[] }
         if (Array.isArray(body)) {
-          let rows = body
-          if (categoriesFromUrl) {
-            rows = rows.filter((p: Product) => p.category === categoriesFromUrl)
-          }
+          let rows = applyLegacyFilters(body, searchParams)
+          rows = sortLegacy(rows, searchParams)
           const total = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
           setTotalPages(total)
-          const start = (pageFromUrl - 1) * PAGE_SIZE
+          const page = parsePage(searchParams.get('page'))
+          const safePage = Math.min(page, total)
+          const start = (safePage - 1) * PAGE_SIZE
           setProducts(rows.slice(start, start + PAGE_SIZE))
           return
         }
 
-        // Paginated: { items, totalPages, ... }
         if (body && typeof body === 'object' && 'items' in body) {
           const payload = body as { items?: Product[]; totalPages?: number }
           const items = payload.items
@@ -102,7 +192,7 @@ const Products = () => {
         setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [pageFromUrl, categoriesFromUrl])
+  }, [listingKey])
 
   useEffect(() => {
     if (loading) return
@@ -178,7 +268,7 @@ const Products = () => {
           </div>
         )}
       </div>
-      {!loading && !error && totalPages > 1 && (
+      {!loading && !error && (
         <Pagination
           totalPages={totalPages}
           currentPage={currentPage}

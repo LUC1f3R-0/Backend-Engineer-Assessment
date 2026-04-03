@@ -9,6 +9,7 @@ const apiKey = import.meta.env.VITE_X_API_KEY as string | undefined;
 export const httpClient = axios.create({
   baseURL: backendUrl,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     ...(apiKey ? { 'x-api-key': apiKey } : {}),

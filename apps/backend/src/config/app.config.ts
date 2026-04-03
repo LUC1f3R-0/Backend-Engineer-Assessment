@@ -26,6 +26,18 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/**
+ * Service account private key from env (often uses literal `\n` in .env).
+ * Empty string if unset.
+ */
+function firebasePrivateKeyFromEnv(): string {
+  const raw = process.env.FIREBASE_PRIVATE_KEY?.trim() ?? '';
+  if (!raw) {
+    return '';
+  }
+  return raw.replace(/\\n/g, '\n');
+}
+
 export function getAppConfig() {
   const nodeEnv = process.env.NODE_ENV ?? 'development';
   return {
@@ -43,5 +55,9 @@ export function getAppConfig() {
       nodeEnv === 'production' || process.env.DEVICE_COOKIE_SECURE === 'true',
     /** Optional e.g. `.example.com` when frontend and API share a parent domain. */
     deviceCookieDomain: process.env.DEVICE_COOKIE_DOMAIN?.trim() || undefined,
+    /** Firebase Admin (FCM server send). All three required to send push notifications. */
+    firebaseProjectId: process.env.FIREBASE_PROJECT_ID?.trim() ?? '',
+    firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL?.trim() ?? '',
+    firebasePrivateKey: firebasePrivateKeyFromEnv(),
   };
 }

@@ -30,4 +30,16 @@ export class ProductsService {
       totalPages,
     };
   }
+
+  /** Distinct non-empty categories, sorted */
+  async listCategories(): Promise<string[]> {
+    const rows = await this.products
+      .createQueryBuilder('p')
+      .select('DISTINCT p.category', 'category')
+      .where('p.category IS NOT NULL')
+      .andWhere("TRIM(p.category) <> ''")
+      .orderBy('p.category', 'ASC')
+      .getRawMany<{ category: string }>();
+    return rows.map((r) => r.category);
+  }
 }

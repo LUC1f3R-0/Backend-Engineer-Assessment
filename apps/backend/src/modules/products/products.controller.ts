@@ -16,6 +16,14 @@ import { ProductsService } from './products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @Get('categories')
+  @UseInterceptors(AppCacheInterceptor)
+  @ApiOperation({ summary: 'List distinct product categories' })
+  @ApiOkResponse({ schema: { type: 'array', items: { type: 'string' } } })
+  listCategories() {
+    return this.productsService.listCategories();
+  }
+
   @Get()
   @UseInterceptors(AppCacheInterceptor)
   @ApiOperation({ summary: 'List products (paginated, max 8 per page)' })

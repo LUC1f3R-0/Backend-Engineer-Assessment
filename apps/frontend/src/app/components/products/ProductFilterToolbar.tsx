@@ -50,7 +50,9 @@ const ProductFilterToolbar = () => {
   const [searchParams] = useSearchParams()
   const paramsKey = searchParams.toString()
 
-  const [qInput, setQInput] = useState(() => searchParams.get('q') ?? '')
+  const [qInput, setQInput] = useState(
+    () => searchParams.get('q')?.trim() || searchParams.get('search')?.trim() || '',
+  )
   const [draftCategory, setDraftCategory] = useState('')
   const [draftMin, setDraftMin] = useState('')
   const [draftMax, setDraftMax] = useState('')
@@ -61,7 +63,7 @@ const ProductFilterToolbar = () => {
 
   useEffect(() => {
     const sp = new URLSearchParams(paramsKey)
-    setQInput(sp.get('q') ?? '')
+    setQInput(sp.get('q')?.trim() || sp.get('search')?.trim() || '')
     setDraftCategory(sp.get('categories') ?? '')
     setDraftMin(sp.get('minPrice') ?? '')
     setDraftMax(sp.get('maxPrice') ?? '')
@@ -110,6 +112,7 @@ const ProductFilterToolbar = () => {
   }
 
   function applyDiscoveryToParams(next: URLSearchParams) {
+    next.delete('search')
     const trimmed = qInput.trim()
     if (trimmed) {
       next.set('q', trimmed)

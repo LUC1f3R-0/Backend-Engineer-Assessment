@@ -1,17 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
+import type { ProductListFilters } from './dto/product-list-query';
 import { Product } from './entities/product.entity';
-
-type ProductListFilters = {
-  categories?: string;
-  q?: string;
-  search?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  inStock?: string;
-  sort?: string;
-};
 
 @Injectable()
 export class ProductsService {
@@ -47,9 +38,13 @@ export class ProductsService {
   }
 
   private parseNum(raw?: string): number | undefined {
-    if (raw === undefined || raw === null) return undefined;
+    if (raw === undefined || raw === null) {
+      return undefined;
+    }
     const s = String(raw).trim();
-    if (s === '') return undefined;
+    if (s === '') {
+      return undefined;
+    }
     const n = parseFloat(s);
     return Number.isFinite(n) ? n : undefined;
   }

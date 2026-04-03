@@ -1,4 +1,4 @@
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Query, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Query, UseInterceptors } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -7,6 +7,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AppCacheInterceptor } from '../../common/interceptors/cache.interceptor';
+import { parseProductListQuery } from './dto/product-list-query';
 import { ProductsPageResponseDto } from './dto/product-swagger.dto';
 import { ProductsService } from './products.service';
 
@@ -37,28 +38,12 @@ export class ProductsController {
   @ApiQuery({
     name: 'sort',
     required: false,
-    description: 'featured | price_asc | price_desc | newest | name_asc | name_desc',
+    description:
+      'featured | price_asc | price_desc | newest | name_asc | name_desc',
   })
   @ApiOkResponse({ type: ProductsPageResponseDto })
-  findAll(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(8), ParseIntPipe) limit: number,
-    @Query('categories') categories?: string,
-    @Query('q') q?: string,
-    @Query('search') search?: string,
-    @Query('minPrice') minPrice?: string,
-    @Query('maxPrice') maxPrice?: string,
-    @Query('inStock') inStock?: string,
-    @Query('sort') sort?: string,
-  ) {
-    return this.productsService.findPaged(page, limit, {
-      categories,
-      q,
-      search,
-      minPrice,
-      maxPrice,
-      inStock,
-      sort,
-    });
+  findAll(@Query() query: Record<string, unknown>) {
+    const { page, limit, filters } = parseProductListQuery(query);
+    return this.productsService.findPaged(page, limit, filters);
   }
 }

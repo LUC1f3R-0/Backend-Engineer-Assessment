@@ -5,18 +5,21 @@
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as dotenv from 'dotenv';
+import { loadEnv } from './config/load-env';
 import { AppModule } from './app.module';
+import { getAppConfig } from './config/app.config';
 import { getCorsOptions, getCorsOrigins } from './config/cors.config';
 import { getSwaggerUiUrl, setupSwagger } from './config/swagger.config';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
-dotenv.config();
+loadEnv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const cfg = getAppConfig();
+
   app.enableCors(getCorsOptions());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor());
@@ -24,25 +27,20 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  const swaggerEnabled = process.env.SWAGGER_ENABLED === 'true';
-
-  if (swaggerEnabled) {
+  if (cfg.swaggerEnabled) {
     setupSwagger(app);
   }
 
-  const port = Number(process.env.PORT) || 8080;
-  const listenHost =
-    process.env.K_SERVICE || process.env.NODE_ENV === 'production'
-      ? '0.0.0.0'
-      : 'localhost';
+  const port = cfg.port;
+  const listenHost = cfg.isCloudRun || cfg.nodeEnv === 'production' ? '0.0.0.0' : 'localhost';
   await app.listen(port, listenHost);
 
   Logger.log(`CORS allowed origins: ${getCorsOrigins().join(', ')}`);
   Logger.log(
-    `Application is running on ${process.env.NODE_ENV}: http://localhost:${port}/${globalPrefix}`,
+    `Application is running on ${cfg.nodeEnv}: http://localhost:${port}/${globalPrefix}`,
   );
 
-  if (swaggerEnabled) {
+  if (cfg.swaggerEnabled) {
     Logger.log(`Swagger UI: ${getSwaggerUiUrl(port, globalPrefix)}`);
   }
 }

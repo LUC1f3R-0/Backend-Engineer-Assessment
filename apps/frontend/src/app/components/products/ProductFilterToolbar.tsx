@@ -1,7 +1,6 @@
 import React, { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import axiosInstance from '../../configs/api'
-import type { Product } from '../../types/product'
+import { fetchProductCategories } from '../../api/products.api'
 
 type SortParam =
   | 'featured'
@@ -37,8 +36,12 @@ const SELECT_CHEVRON_STYLE = {
 }
 
 function parseSort(raw: string | null): SortParam {
-  if (!raw) return 'featured'
-  if (SORT_OPTIONS.some((o) => o.value === raw)) return raw as SortParam
+  if (!raw) {
+    return 'featured'
+  }
+  if (SORT_OPTIONS.some((o) => o.value === raw)) {
+    return raw as SortParam
+  }
   return 'featured'
 }
 
@@ -67,40 +70,19 @@ const ProductFilterToolbar = () => {
     setDraftInStockOnly(ins === '1' || ins === 'true')
   }, [paramsKey])
 
-  /** Build category list from the same paginated products API (no separate /categories route). */
   useEffect(() => {
     let cancelled = false
-    const PAGE = 8
-
-    async function load() {
-      const types = new Set<string>()
-      const first = await axiosInstance.get('/api/products', { params: { page: 1, limit: PAGE } })
-      const body = first.data?.data as unknown
-      if (cancelled) return
-
-      if (Array.isArray(body)) {
-        body.forEach((p: Product) => {
-          if (p?.category) types.add(p.category)
-        })
-        setCategoryOptions([...types].sort())
-        return
-      }
-
-      const p1 = body as { items?: Product[]; totalPages?: number }
-      const totalPages = typeof p1?.totalPages === 'number' ? p1.totalPages : 1
-      for (let page = 1; page <= totalPages; page++) {
-        if (cancelled) return
-        const res =
-          page === 1 ? first : await axiosInstance.get('/api/products', { params: { page, limit: PAGE } })
-        const payload = res.data?.data as { items?: Product[] }
-        payload?.items?.forEach((p) => {
-          if (p?.category) types.add(p.category)
-        })
-      }
-      setCategoryOptions([...types].sort())
-    }
-
-    load().catch(() => {})
+    fetchProductCategories()
+      .then((cats) => {
+        if (!cancelled) {
+          setCategoryOptions(cats)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCategoryOptions([])
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -129,22 +111,39 @@ const ProductFilterToolbar = () => {
 
   function applyDiscoveryToParams(next: URLSearchParams) {
     const trimmed = qInput.trim()
-    if (trimmed) next.set('q', trimmed)
-    else next.delete('q')
-    if (draftCategory) next.set('categories', draftCategory)
-    else next.delete('categories')
-    if (draftMin.trim()) next.set('minPrice', draftMin.trim())
-    else next.delete('minPrice')
-    if (draftMax.trim()) next.set('maxPrice', draftMax.trim())
-    else next.delete('maxPrice')
-    if (draftInStockOnly) next.set('inStock', '1')
-    else next.delete('inStock')
+    if (trimmed) {
+      next.set('q', trimmed)
+    } else {
+      next.delete('q')
+    }
+    if (draftCategory) {
+      next.set('categories', draftCategory)
+    } else {
+      next.delete('categories')
+    }
+    if (draftMin.trim()) {
+      next.set('minPrice', draftMin.trim())
+    } else {
+      next.delete('minPrice')
+    }
+    if (draftMax.trim()) {
+      next.set('maxPrice', draftMax.trim())
+    } else {
+      next.delete('maxPrice')
+    }
+    if (draftInStockOnly) {
+      next.set('inStock', '1')
+    } else {
+      next.delete('inStock')
+    }
     next.set('page', '1')
   }
 
   function showResults(e?: FormEvent) {
     e?.preventDefault()
-    if (!validatePriceRange()) return
+    if (!validatePriceRange()) {
+      return
+    }
     const next = new URLSearchParams(searchParams)
     applyDiscoveryToParams(next)
     navigate({ pathname: '/products', search: next.toString() })
@@ -153,8 +152,11 @@ const ProductFilterToolbar = () => {
   function handleSortChange(value: SortParam) {
     setDraftSort(value)
     const next = new URLSearchParams(searchParams)
-    if (value !== 'featured') next.set('sort', value)
-    else next.delete('sort')
+    if (value !== 'featured') {
+      next.set('sort', value)
+    } else {
+      next.delete('sort')
+    }
     next.set('page', '1')
     navigate({ pathname: '/products', search: next.toString() })
   }
@@ -227,8 +229,11 @@ const ProductFilterToolbar = () => {
                 onChange={(e) => {
                   const v = e.target.value
                   const next = new URLSearchParams(searchParams)
-                  if (v === CATEGORY_ALL) next.delete('categories')
-                  else next.set('categories', v)
+                  if (v === CATEGORY_ALL) {
+                    next.delete('categories')
+                  } else {
+                    next.set('categories', v)
+                  }
                   next.set('page', '1')
                   navigate({ pathname: '/products', search: next.toString() })
                 }}

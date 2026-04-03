@@ -37,9 +37,6 @@ export class Product {
   @Column({ type: 'text', name: 'image_url' })
   imageUrl: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'test', nullable: true })
-  test: string | null;
-
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 

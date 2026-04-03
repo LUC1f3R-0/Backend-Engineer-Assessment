@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, QueryFailedError, Repository } from 'typeorm';
+import { FcmService } from '../notifications/fcm.service';
 import { Product } from '../products/entities/product.entity';
 import type { CreateOrderInput, CreateOrderItemInput } from './dto/create-order.dto';
 import { OrderItem } from './entities/order-item.entity';
@@ -54,12 +56,17 @@ export type CreateOrderResponse = {
   createdAt: Date;
 };
 
+type CreateOrderTxResult = { response: CreateOrderResponse; notify: boolean };
+
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     private readonly dataSource: DataSource,
+    private readonly fcmService: FcmService,
   ) {}
 
   private parseCreateInput(raw: Record<string, unknown>): CreateOrderInput {
@@ -193,13 +200,13 @@ export class OrdersService {
     }
 
     try {
-      return await this.dataSource.transaction(async (em) => {
+      const txResult = await this.dataSource.transaction<CreateOrderTxResult>(async (em) => {
         const dup = await em.findOne(Order, {
           where: { idempotencyKey: dto.idempotencyKey },
           relations: ['items', 'items.product'],
         });
         if (dup) {
-          return this.toResponse(dup);
+          return { response: this.toResponse(dup), notify: false };
         }
 
         const productIds = lines.map((l) => l.productId);
@@ -250,7 +257,7 @@ export class OrdersService {
               relations: ['items', 'items.product'],
             });
             if (again) {
-              return this.toResponse(again);
+              return { response: this.toResponse(again), notify: false };
             }
           }
           throw err;
@@ -288,8 +295,24 @@ export class OrdersService {
         if (!full) {
           throw new BadRequestException('Order could not be loaded');
         }
-        return this.toResponse(full);
+        return { response: this.toResponse(full), notify: true };
       });
+
+      if (txResult.notify) {
+        void this.fcmService
+          .sendOrderPlacedNotification({
+            orderId: txResult.response.id,
+            deviceId: txResult.response.deviceId,
+            totalAmount: txResult.response.totalAmount,
+          })
+          .catch((err: unknown) => {
+            this.logger.warn(
+              `Order FCM hook failed unexpectedly (order still created): ${String(err)}`,
+            );
+          });
+      }
+
+      return txResult.response;
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         const again = await this.orderRepo.findOne({

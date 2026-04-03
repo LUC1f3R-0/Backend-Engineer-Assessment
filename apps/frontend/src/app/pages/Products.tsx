@@ -23,7 +23,7 @@ function parsePriceString(p: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
-/** Axios params aligned with backend `GET /api/products` */
+
 function buildListingParams(searchParams: URLSearchParams): Record<string, string | number> {
   const page = parsePage(searchParams.get('page'))
   const params: Record<string, string | number> = {
@@ -57,7 +57,7 @@ function buildListingParams(searchParams: URLSearchParams): Record<string, strin
   return params
 }
 
-/** If API returns a legacy raw array, mirror backend filters client-side */
+
 function applyLegacyFilters(rows: Product[], sp: URLSearchParams): Product[] {
   let out = rows
   const cat = sp.get('categories')?.trim()

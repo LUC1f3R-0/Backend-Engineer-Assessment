@@ -34,7 +34,7 @@ function writeStorage(lines: CartLine[]) {
 
 type CartContextValue = {
   lines: CartLine[]
-  /** Distinct product ids in cart (badge does not grow when adding more of the same id) */
+  
   uniqueItemCount: number
   isOpen: boolean
   openCart: () => void

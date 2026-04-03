@@ -1,7 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Product } from './entities/product.entity';
+
+type ProductListFilters = {
+  categories?: string;
+  q?: string;
+  search?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  inStock?: string;
+  sort?: string;
+};
 
 @Injectable()
 export class ProductsService {
@@ -11,20 +21,22 @@ export class ProductsService {
   ) {}
 
   /** @param limit capped at 8 */
-  async findPaged(page: number, limit: number, categories?: string) {
+  async findPaged(page: number, limit: number, filters: ProductListFilters = {}) {
     const safeLimit = Math.min(8, Math.max(1, limit));
-    const cat = categories?.trim();
-    const where = cat ? { category: cat } : {};
-    const totalItems = await this.products.count({ where });
+    const safePageInput = Math.max(1, page);
+
+    const qb = this.products.createQueryBuilder('p');
+    this.applyFilters(qb, filters);
+
+    const totalItems = await qb.clone().getCount();
     const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
-    const safePage = Math.min(Math.max(1, page), totalPages);
-    const skip = (safePage - 1) * safeLimit;
-    const items = await this.products.find({
-      where,
-      order: { createdAt: 'ASC' },
-      skip,
-      take: safeLimit,
-    });
+    const safePage = Math.min(safePageInput, totalPages);
+
+    this.applySort(qb, filters.sort);
+    qb.skip((safePage - 1) * safeLimit).take(safeLimit);
+
+    const items = await qb.getMany();
+
     return {
       items,
       page: safePage,
@@ -32,6 +44,65 @@ export class ProductsService {
       totalItems,
       totalPages,
     };
+  }
+
+  private parseNum(raw?: string): number | undefined {
+    if (raw === undefined || raw === null) return undefined;
+    const s = String(raw).trim();
+    if (s === '') return undefined;
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  private applyFilters(qb: SelectQueryBuilder<Product>, filters: ProductListFilters) {
+    const cat = filters.categories?.trim();
+    if (cat) {
+      qb.andWhere('p.category = :cat', { cat });
+    }
+
+    const term = filters.q?.trim() || filters.search?.trim();
+    if (term) {
+      qb.andWhere('(p.name ILIKE :q OR p.description ILIKE :q)', { q: `%${term}%` });
+    }
+
+    const minP = this.parseNum(filters.minPrice);
+    if (minP !== undefined) {
+      qb.andWhere('CAST(p.price AS DECIMAL) >= :minP', { minP });
+    }
+
+    const maxP = this.parseNum(filters.maxPrice);
+    if (maxP !== undefined) {
+      qb.andWhere('CAST(p.price AS DECIMAL) <= :maxP', { maxP });
+    }
+
+    const inStockOnly =
+      filters.inStock === '1' || filters.inStock?.toLowerCase() === 'true';
+    if (inStockOnly) {
+      qb.andWhere('p.stock > 0');
+    }
+  }
+
+  private applySort(qb: SelectQueryBuilder<Product>, sortRaw?: string) {
+    const s = sortRaw?.trim() || 'featured';
+    switch (s) {
+      case 'price_asc':
+        qb.orderBy('CAST(p.price AS DECIMAL)', 'ASC').addOrderBy('p.id', 'ASC');
+        break;
+      case 'price_desc':
+        qb.orderBy('CAST(p.price AS DECIMAL)', 'DESC').addOrderBy('p.id', 'ASC');
+        break;
+      case 'newest':
+        qb.orderBy('p.createdAt', 'DESC').addOrderBy('p.id', 'DESC');
+        break;
+      case 'name_asc':
+        qb.orderBy('p.name', 'ASC').addOrderBy('p.id', 'ASC');
+        break;
+      case 'name_desc':
+        qb.orderBy('p.name', 'DESC').addOrderBy('p.id', 'ASC');
+        break;
+      default:
+        qb.orderBy('p.createdAt', 'ASC').addOrderBy('p.id', 'ASC');
+    }
   }
 
   /** Distinct non-empty categories, sorted */

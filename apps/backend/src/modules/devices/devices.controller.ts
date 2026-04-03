@@ -35,21 +35,31 @@ export class DevicesController {
 
   @Put('push-token')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Register or update FCM push token using HttpOnly device cookies' })
+  @ApiOperation({
+    summary:
+      'Register or update FCM push token (anonymous device via ensureSession + HttpOnly cookies; same bootstrap as orders)',
+  })
   upsertPushTokenCookie(
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
     @Body() body: Record<string, unknown>,
   ): ReturnType<DevicesService['upsertPushTokenFromCookies']> {
     const token = typeof body.token === 'string' ? body.token : '';
     const platform = typeof body.platform === 'string' ? body.platform : 'web';
-    return this.devicesService.upsertPushTokenFromCookies(req, token, platform);
+    return this.devicesService.upsertPushTokenFromCookies(req, res, token, platform);
   }
 
   @Delete('push-token')
   @HttpCode(204)
-  @ApiOperation({ summary: 'Remove push token using HttpOnly device cookies' })
-  deletePushTokenCookie(@Req() req: Request): ReturnType<DevicesService['deletePushTokenFromCookies']> {
-    return this.devicesService.deletePushTokenFromCookies(req);
+  @ApiOperation({
+    summary:
+      'Remove push token for the current anonymous device (ensureSession + HttpOnly cookies; same bootstrap as orders)',
+  })
+  deletePushTokenCookie(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): ReturnType<DevicesService['deletePushTokenFromCookies']> {
+    return this.devicesService.deletePushTokenFromCookies(req, res);
   }
 
   @Post('register')

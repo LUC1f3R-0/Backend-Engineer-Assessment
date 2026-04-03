@@ -90,27 +90,26 @@ export class DevicesService {
     return created;
   }
 
-  private getDeviceAuthFromCookies(req: Request): { deviceId: string; deviceSecret: string } {
-    const cookies = parseCookieHeader(req.headers.cookie);
-    const id = cookies[DEVICE_COOKIE_ID];
-    const secret = cookies[DEVICE_COOKIE_SECRET];
-    if (!id || !secret || !isUuid(id) || secret.length !== SECRET_HEX_LENGTH) {
-      throw new UnauthorizedException('Missing device session');
-    }
-    return { deviceId: id, deviceSecret: secret };
-  }
-
+  /**
+   * Browser push-token routes: same semantics as POST /orders — run ensureSession so a missing Cookie
+   * header (first visit or before cookies apply) still binds the token to the device created/refreshed here.
+   */
   async upsertPushTokenFromCookies(
     req: Request,
+    res: Response,
     token: string,
     platform: string,
   ): Promise<PushTokenResponse> {
-    const { deviceId, deviceSecret } = this.getDeviceAuthFromCookies(req);
-    return this.upsertPushToken(deviceId, deviceSecret, token, platform);
+    const trimmed = token?.trim();
+    if (!trimmed) {
+      throw new BadRequestException('token is required');
+    }
+    const { deviceId, deviceSecret } = await this.ensureSession(req, res);
+    return this.upsertPushToken(deviceId, deviceSecret, trimmed, platform);
   }
 
-  async deletePushTokenFromCookies(req: Request): Promise<void> {
-    const { deviceId, deviceSecret } = this.getDeviceAuthFromCookies(req);
+  async deletePushTokenFromCookies(req: Request, res: Response): Promise<void> {
+    const { deviceId, deviceSecret } = await this.ensureSession(req, res);
     return this.deletePushToken(deviceId, deviceSecret);
   }
 

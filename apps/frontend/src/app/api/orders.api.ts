@@ -13,6 +13,7 @@ export type CreateOrderRequest = {
 export type OrderResponse = {
   id: string;
   idempotencyKey: string;
+  deviceId: string | null;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;

@@ -2,6 +2,8 @@ import { join } from 'path';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { loadEnv, resolveBackendRoot } from './load-env';
+import { DevicePushToken } from '../modules/devices/entities/device-push-token.entity';
+import { Device } from '../modules/devices/entities/device.entity';
 import { OrderItem } from '../modules/orders/entities/order-item.entity';
 import { Order } from '../modules/orders/entities/order.entity';
 import { Product } from '../modules/products/entities/product.entity';
@@ -36,7 +38,7 @@ export function getDataSourceOptions(): DataSourceOptions {
 export function getNestTypeOrmConfig(): TypeOrmModuleOptions {
   return {
     ...getTypeOrmConfig(),
-    entities: [Product, Order, OrderItem],
+    entities: [Product, Order, OrderItem, Device, DevicePushToken],
   };
 }
 

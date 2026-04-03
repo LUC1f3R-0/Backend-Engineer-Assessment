@@ -46,6 +46,10 @@ export class Order {
   @Column({ type: 'varchar', length: 128, unique: true, name: 'idempotency_key' })
   idempotencyKey: string;
 
+  /** Anonymous guest device (HttpOnly cookie session); nullable for legacy rows. */
+  @Column({ type: 'uuid', name: 'device_id', nullable: true })
+  deviceId: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
 

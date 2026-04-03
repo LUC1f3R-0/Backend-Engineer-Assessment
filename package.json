@@ -5,12 +5,10 @@
   "scripts": {
     "build": "nx run backend:build",
     "start:prod": "node dist/apps/backend/main.js",
-
     "migration:run": "cd apps/backend && TS_NODE_PROJECT=tsconfig.app.json node -r ts-node/register ../../node_modules/typeorm/cli.js -d ./src/config/database.config.ts migration:run",
     "migration:revert": "cd apps/backend && TS_NODE_PROJECT=tsconfig.app.json node -r ts-node/register ../../node_modules/typeorm/cli.js -d ./src/config/database.config.ts migration:revert",
     "migration:generate": "cd apps/backend && TS_NODE_PROJECT=tsconfig.app.json node -r ts-node/register ../../node_modules/typeorm/cli.js -d ./src/config/database.config.ts migration:generate ./src/migrations/MigrationName",
     "migration:create": "cd apps/backend && node ../../node_modules/typeorm/cli.js migration:create ./src/migrations/MigrationName",
-
     "seed:run": "cd apps/backend && npx ts-node --project tsconfig.app.json -r reflect-metadata ./src/seeds/run-seed.ts"
   },
   "private": true,
@@ -70,6 +68,7 @@
     "axios": "^1.6.0",
     "cache-manager": "^7.2.8",
     "dotenv": "^17.3.1",
+    "firebase": "^11.10.0",
     "pg": "^8.20.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -39,6 +39,7 @@ export type OrderItemResponse = {
 export type CreateOrderResponse = {
   id: string;
   idempotencyKey: string;
+  deviceId: string | null;
   customerName: string;
   customerEmail: string | null;
   customerPhone: string;
@@ -163,6 +164,7 @@ export class OrdersService {
     return {
       id: order.id,
       idempotencyKey: order.idempotencyKey,
+      deviceId: order.deviceId ?? null,
       customerName: order.customerName,
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,
@@ -178,7 +180,7 @@ export class OrdersService {
     };
   }
 
-  async createOrder(rawBody: Record<string, unknown>): Promise<CreateOrderResponse> {
+  async createOrder(rawBody: Record<string, unknown>, deviceId: string): Promise<CreateOrderResponse> {
     const dto = this.parseCreateInput(rawBody);
     const lines = this.mergeItems(dto.items);
 
@@ -235,6 +237,7 @@ export class OrdersService {
           totalAmount: totalAmount.toFixed(2),
           status: 'pending',
           idempotencyKey: dto.idempotencyKey,
+          deviceId,
         });
 
         let saved: Order;

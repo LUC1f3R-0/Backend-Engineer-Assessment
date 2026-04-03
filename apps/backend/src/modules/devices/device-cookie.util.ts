@@ -35,11 +35,14 @@ function buildSetCookieLine(name: string, value: string): string {
     `${encodeURIComponent(name)}=${encodeURIComponent(value)}`,
     'Path=/',
     `Max-Age=${maxAge}`,
-    'SameSite=Lax',
     'HttpOnly',
   ];
   if (cfg.deviceCookieSecure) {
     parts.push('Secure');
+    // Cross-origin SPA (e.g. Netlify) → API (e.g. Cloud Run): credentialed fetch requires SameSite=None + Secure.
+    parts.push('SameSite=None');
+  } else {
+    parts.push('SameSite=Lax');
   }
   if (cfg.deviceCookieDomain) {
     parts.push(`Domain=${cfg.deviceCookieDomain}`);

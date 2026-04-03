@@ -49,15 +49,30 @@ export class ProductsService {
     return Number.isFinite(n) ? n : undefined;
   }
 
+  /** Whitespace-separated tokens; each must fuzzy-match (pg_trgm %) on name, description, or any single tag. */
+  private searchTokens(raw: string): string[] {
+    return raw
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+  }
+
   private applyFilters(qb: SelectQueryBuilder<Product>, filters: ProductListFilters) {
     const cat = filters.categories?.trim();
     if (cat) {
       qb.andWhere('p.category = :cat', { cat });
     }
 
-    const term = filters.q?.trim() || filters.search?.trim();
-    if (term) {
-      qb.andWhere('(p.name ILIKE :q OR p.description ILIKE :q)', { q: `%${term}%` });
+    const raw = filters.q?.trim() || filters.search?.trim();
+    if (raw) {
+      const tokens = this.searchTokens(raw);
+      tokens.forEach((token, i) => {
+        const key = `trgmTok${i}`;
+        qb.andWhere(
+          `(p.name % :${key} OR p.description % :${key} OR EXISTS (SELECT 1 FROM unnest(COALESCE(p.tags, ARRAY[]::text[])) AS tag WHERE tag % :${key}))`,
+          { [key]: token },
+        );
+      });
     }
 
     const minP = this.parseNum(filters.minPrice);

@@ -74,7 +74,6 @@ const Products = () => {
   const [totalPages, setTotalPages] = React.useState(1)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  console.log(products)
   const listingKey = searchParams.toString()
 
   const pageFromUrl = useMemo(() => parsePage(searchParams.get('page')), [searchParams])

@@ -30,7 +30,12 @@ export class ProductsController {
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 8, description: 'Max 8' })
   @ApiQuery({ name: 'categories', required: false, description: 'Filter by category' })
-  @ApiQuery({ name: 'q', required: false, description: 'Search name/description' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description:
+      'Search (pg_trgm fuzzy) on name, description, tags; space-separated tokens are ANDed',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Alias for q' })
   @ApiQuery({ name: 'minPrice', required: false })
   @ApiQuery({ name: 'maxPrice', required: false })

@@ -16,11 +16,17 @@ export class Order {
   @Column({ type: 'varchar', length: 255, name: 'customer_name' })
   customerName: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'customer_email' })
-  customerEmail: string;
+  @Column({ type: 'varchar', length: 255, name: 'customer_email', nullable: true })
+  customerEmail: string | null;
+
+  @Column({ type: 'varchar', length: 32, name: 'customer_phone' })
+  customerPhone: string;
 
   @Column({ type: 'text', name: 'delivery_address' })
   deliveryAddress: string;
+
+  @Column({ type: 'varchar', length: 50, name: 'payment_method' })
+  paymentMethod: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   subtotal: string;

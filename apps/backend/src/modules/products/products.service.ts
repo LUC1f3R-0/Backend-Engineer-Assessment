@@ -11,13 +11,16 @@ export class ProductsService {
   ) {}
 
   /** @param limit capped at 8 */
-  async findPaged(page: number, limit: number) {
+  async findPaged(page: number, limit: number, categories?: string) {
     const safeLimit = Math.min(8, Math.max(1, limit));
-    const totalItems = await this.products.count();
+    const cat = categories?.trim();
+    const where = cat ? { category: cat } : {};
+    const totalItems = await this.products.count({ where });
     const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
     const safePage = Math.min(Math.max(1, page), totalPages);
     const skip = (safePage - 1) * safeLimit;
     const items = await this.products.find({
+      where,
       order: { createdAt: 'ASC' },
       skip,
       take: safeLimit,

@@ -27,6 +27,7 @@ const Products = () => {
   const [error, setError] = React.useState<string | null>(null)
 
   const pageFromUrl = useMemo(() => parsePage(searchParams.get('page')), [searchParams])
+  const categoriesFromUrl = searchParams.get('categories') ?? ''
 
   useEffect(() => {
     const p = searchParams.get('page')
@@ -57,17 +58,27 @@ const Products = () => {
   useEffect(() => {
     setLoading(true)
     setError(null)
+    const params: { page: number; limit: number; categories?: string } = {
+      page: pageFromUrl,
+      limit: PAGE_SIZE,
+    }
+    if (categoriesFromUrl) params.categories = categoriesFromUrl
+
     axiosInstance
-      .get('/api/products', { params: { page: pageFromUrl, limit: PAGE_SIZE } })
+      .get('/api/products', { params })
       .then((res) => {
         const body = res.data?.data as unknown
 
         // Legacy: interceptor wraps an array as { data: Product[] }
         if (Array.isArray(body)) {
-          const total = Math.max(1, Math.ceil(body.length / PAGE_SIZE))
+          let rows = body
+          if (categoriesFromUrl) {
+            rows = rows.filter((p: Product) => p.category === categoriesFromUrl)
+          }
+          const total = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
           setTotalPages(total)
           const start = (pageFromUrl - 1) * PAGE_SIZE
-          setProducts(body.slice(start, start + PAGE_SIZE))
+          setProducts(rows.slice(start, start + PAGE_SIZE))
           return
         }
 
@@ -91,7 +102,7 @@ const Products = () => {
         setTotalPages(1)
       })
       .finally(() => setLoading(false))
-  }, [pageFromUrl])
+  }, [pageFromUrl, categoriesFromUrl])
 
   useEffect(() => {
     if (loading) return

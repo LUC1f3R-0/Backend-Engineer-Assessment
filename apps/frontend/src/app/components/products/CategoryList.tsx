@@ -9,14 +9,14 @@ const COURSES = [
 
 const CategoryList = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const active = searchParams.get('category')
+  const active = searchParams.get('categories')
 
   const selectCategory = (slug: string) => {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
-        if (active === slug) next.delete('category')
-        else next.set('category', slug)
+        if (active === slug) next.delete('categories')
+        else next.set('categories', slug)
         return next
       },
       { replace: false },

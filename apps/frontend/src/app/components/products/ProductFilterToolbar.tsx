@@ -1,6 +1,7 @@
 import React, { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axiosInstance from '../../configs/api'
+import type { Product } from '../../types/product'
 
 type SortParam =
   | 'featured'
@@ -23,6 +24,9 @@ const INPUT_BASE =
   'rounded-lg border border-gray-200 bg-white text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
 const CONTROL_MD = `${INPUT_BASE} h-10 w-full min-w-0 px-3`
 const CONTROL_LG = `${INPUT_BASE} h-12 w-full min-w-0 pl-11 pr-4 text-[15px]`
+
+/** URL value meaning “no category filter” (first option is disabled empty) */
+const CATEGORY_ALL = '__all__'
 
 const SELECT_CHEVRON_STYLE = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
@@ -55,7 +59,7 @@ const ProductFilterToolbar = () => {
   useEffect(() => {
     const sp = new URLSearchParams(paramsKey)
     setQInput(sp.get('q') ?? '')
-    setDraftCategory(sp.get('category') ?? '')
+    setDraftCategory(sp.get('categories') ?? '')
     setDraftMin(sp.get('minPrice') ?? '')
     setDraftMax(sp.get('maxPrice') ?? '')
     setDraftSort(parseSort(sp.get('sort')))
@@ -63,15 +67,40 @@ const ProductFilterToolbar = () => {
     setDraftInStockOnly(ins === '1' || ins === 'true')
   }, [paramsKey])
 
+  /** Build category list from the same paginated products API (no separate /categories route). */
   useEffect(() => {
     let cancelled = false
-    axiosInstance
-      .get<{ data: string[] }>('/api/products/categories')
-      .then((res) => {
-        const list = res.data?.data
-        if (!cancelled && Array.isArray(list)) setCategoryOptions(list)
-      })
-      .catch(() => {})
+    const PAGE = 8
+
+    async function load() {
+      const types = new Set<string>()
+      const first = await axiosInstance.get('/api/products', { params: { page: 1, limit: PAGE } })
+      const body = first.data?.data as unknown
+      if (cancelled) return
+
+      if (Array.isArray(body)) {
+        body.forEach((p: Product) => {
+          if (p?.category) types.add(p.category)
+        })
+        setCategoryOptions([...types].sort())
+        return
+      }
+
+      const p1 = body as { items?: Product[]; totalPages?: number }
+      const totalPages = typeof p1?.totalPages === 'number' ? p1.totalPages : 1
+      for (let page = 1; page <= totalPages; page++) {
+        if (cancelled) return
+        const res =
+          page === 1 ? first : await axiosInstance.get('/api/products', { params: { page, limit: PAGE } })
+        const payload = res.data?.data as { items?: Product[] }
+        payload?.items?.forEach((p) => {
+          if (p?.category) types.add(p.category)
+        })
+      }
+      setCategoryOptions([...types].sort())
+    }
+
+    load().catch(() => {})
     return () => {
       cancelled = true
     }
@@ -102,8 +131,8 @@ const ProductFilterToolbar = () => {
     const trimmed = qInput.trim()
     if (trimmed) next.set('q', trimmed)
     else next.delete('q')
-    if (draftCategory) next.set('category', draftCategory)
-    else next.delete('category')
+    if (draftCategory) next.set('categories', draftCategory)
+    else next.delete('categories')
     if (draftMin.trim()) next.set('minPrice', draftMin.trim())
     else next.delete('minPrice')
     if (draftMax.trim()) next.set('maxPrice', draftMax.trim())
@@ -194,8 +223,15 @@ const ProductFilterToolbar = () => {
             <div className="w-full min-w-[200px] max-w-xs lg:w-56">
               <select
                 id="filter-category"
-                value={draftCategory}
-                onChange={(e) => setDraftCategory(e.target.value)}
+                value={draftCategory === '' ? CATEGORY_ALL : draftCategory}
+                onChange={(e) => {
+                  const v = e.target.value
+                  const next = new URLSearchParams(searchParams)
+                  if (v === CATEGORY_ALL) next.delete('categories')
+                  else next.set('categories', v)
+                  next.set('page', '1')
+                  navigate({ pathname: '/products', search: next.toString() })
+                }}
                 className={`${CONTROL_MD} pl-3 pr-8`}
                 style={SELECT_CHEVRON_STYLE}
               >
@@ -207,6 +243,7 @@ const ProductFilterToolbar = () => {
                     {c}
                   </option>
                 ))}
+                <option value={CATEGORY_ALL}>All categories</option>
               </select>
             </div>
 

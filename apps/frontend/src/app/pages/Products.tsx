@@ -6,6 +6,8 @@ import Card from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import type { Product } from '../types/product'
 import Pagination from '../components/ui/Pagination'
+import CartModal from '../components/cart/CartModal'
+import { useCart } from '../context/CartContext'
 
 const PAGE_SIZE = 8
 
@@ -17,6 +19,7 @@ function parsePage(raw: string | null): number {
 }
 
 const Products = () => {
+  const { openCart, uniqueItemCount } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = React.useState<Product[]>([])
   const [totalPages, setTotalPages] = React.useState(1)
@@ -121,7 +124,30 @@ const Products = () => {
   return (
     <main className="bg-gray-50">
       <div className="mx-auto px-4 py-6">
-        <h1 className="mb-4 text-xl font-semibold text-gray-900">Products</h1>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h1 className="text-xl font-semibold text-gray-900">Products</h1>
+          <button
+            type="button"
+            onClick={openCart}
+            className="relative flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow hover:bg-blue-700"
+            aria-label="Open shopping cart"
+          >
+            <img
+              src="/cart-icon.png"
+              alt=""
+              className="h-5 w-5 shrink-0 brightness-0 invert"
+              width={20}
+              height={20}
+              aria-hidden
+            />
+            <span className="hidden sm:inline">Cart</span>
+            {uniqueItemCount > 0 ? (
+              <span className="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold">
+                {uniqueItemCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
         <ProductFilterToolbar />
         {loading ? (
           <div className="mt-8 flex min-h-[240px] items-center justify-center">
@@ -148,6 +174,7 @@ const Products = () => {
           onPageChange={handlePageChange}
         />
       )}
+      <CartModal />
     </main>
   )
 }

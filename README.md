@@ -207,11 +207,15 @@ Root `package.json` also defines `migration:*`, `seed:run`, `build` (backend onl
 
 ---
 
-## Demo video
+## Demo video (simple instruction walkthrough)
 
-If your submission requires a **demo recording**, attach it separately (e.g. link in the submission form or an unlisted video). This repository does **not** embed a demo URL so reviewers are not pointed at a stale or private link.
+A short screen recording that walks through setup and basic usage is available on Google Drive:
 
-Suggested coverage: clone → `npm install` → configure `.env` → `npm run migration:run` / `npm run seed:run` → start backend → optional Swagger walkthrough → place an order.
+**[Open instruction video (Google Drive)](https://drive.google.com/file/d/1Q4Usmfp5gNzrBg4V5tSRA8hFYhU-FZgi/view?usp=drivesdk)**
+
+If the link asks you to sign in, the file may be restricted—use **Request access** or share the file with reviewers as needed.
+
+Suggested topics covered (or to follow along yourself): clone → `npm install` → configure `.env` → `npm run migration:run` / `npm run seed:run` → start backend → optional Swagger walkthrough → place an order.
 
 ---
 

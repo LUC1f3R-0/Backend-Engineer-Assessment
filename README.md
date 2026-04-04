@@ -1,96 +1,190 @@
-# MoLkAssessment
+# Mo LK Assessment
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Nx monorepo with a **NestJS** API (`apps/backend`) and a **React + Vite** SPA (`apps/frontend`). PostgreSQL stores data; **Firebase Cloud Messaging** is used for web push (client SDK + Admin SDK on the server).
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Clone the repository
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+This project’s GitHub remote is `https://github.com/LUC1f3R-0/Backend-Engineer-Assessment`. If you use a fork, clone from **your** fork’s URL instead.
 
-## Run tasks
+- **HTTPS** — works everywhere; Git will prompt for credentials (on GitHub, use a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) instead of a password when asked):
 
-To run tasks with Nx use:
+  ```sh
+  git clone https://github.com/LUC1f3R-0/Backend-Engineer-Assessment.git
+  cd Backend-Engineer-Assessment
+  ```
 
-```sh
-npx nx <target> <project-name>
-```
+- **SSH** — no password prompt if your [SSH key is added to GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh):
 
-For example:
+  ```sh
+  git clone git@github.com:LUC1f3R-0/Backend-Engineer-Assessment.git
+  cd Backend-Engineer-Assessment
+  ```
 
-```sh
-npx nx build myproject
-```
+- **GitHub CLI** (if you use `gh` and are logged in):
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+  ```sh
+  gh repo clone LUC1f3R-0/Backend-Engineer-Assessment
+  cd Backend-Engineer-Assessment
+  ```
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **ZIP (no Git):** On the GitHub repo page, use **Code → Download ZIP**, extract it, `cd` into the folder, then run `npm install` as below. You will not have Git history unless you `git init` and add a remote yourself.
 
-## Add new projects
+## Prerequisites
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+- **Node.js** (LTS) and npm  
+- **PostgreSQL** reachable from your machine  
+- A **Firebase** project if you use push notifications (optional for a minimal API-only run)
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
-```
+## Install
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
-
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
-
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
+From the repository root:
 
 ```sh
-npx nx connect
+npm install
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+## Build commands
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Run these from the **repository root** (after `npm install`).
 
-### Step 2
+| What | Command | Output / notes |
+|------|---------|----------------|
+| **Backend** (NestJS, webpack) | `npx nx build backend` | `dist/apps/backend/` — compiled API (`main.js`, etc.). |
+| **Frontend** (Vite production bundle) | `npx nx build frontend` | `dist/apps/frontend/` — static assets for hosting. |
+| **Root npm script** | `npm run build` | Same as `npx nx build backend` only (see `package.json`). To ship the full stack, build **both** apps with the two Nx commands above. |
 
-Use the following command to configure a CI workflow for your workspace:
+**After a backend build — run the API without Nx:**
 
 ```sh
-npx nx g ci-workflow
+npm run start:prod
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Uses `node dist/apps/backend/main.js`. Set the same env vars you use in development (or configure the host). Ensure migrations have been applied against the target database.
 
-## Install Nx Console
+**After a frontend build — preview the static bundle locally:**
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+```sh
+npx nx preview frontend
+```
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Serves `dist/apps/frontend` (default port **4200** in this repo’s Vite config).
 
-## Useful links
+## Backend (`apps/backend`)
 
-Learn more:
+### Assumptions
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- PostgreSQL is running and you can create a database (default name below).
+- The API listens on **port 8080** by default (same as `PORT` in `.env`).
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Decisions
+
+- **NestJS** with **TypeORM** and **PostgreSQL** for persistence.
+- **Firebase Admin** sends FCM messages; credentials come from env (service account).
+- **API key** auth: clients send `x-api-key`; if `X_API_KEY` is unset in env, the server rejects protected routes (set it for local dev).
+
+### Environment file
+
+1. Copy the example file:
+
+   ```sh
+   cp apps/backend/.env.example apps/backend/.env
+   ```
+
+2. Edit `apps/backend/.env`:
+
+   | Variable | What to put |
+   |----------|-------------|
+   | `NODE_ENV` | `development` locally. |
+   | `PORT` | API port (default `8080`). |
+   | `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME` | Your PostgreSQL connection. Default database name in the example is `mo_lk_assessment` — create it if it does not exist. |
+   | `X_API_KEY` | Secret string the frontend (or tools) send as the `x-api-key` header. **Required** for normal API use. |
+   | `FIREBASE_PROJECT_ID` | Firebase project ID (Console → Project settings). |
+   | `FIREBASE_CLIENT_EMAIL` | Service account email (JSON key from Firebase / GCP IAM). |
+   | `FIREBASE_PRIVATE_KEY` | Private key from the same JSON. Paste as one line; use `\n` where the key has line breaks (the app converts `\n` to real newlines). |
+   | `SWAGGER_ENABLED` | Set to **`true`** to turn on **Swagger UI** for interactive API testing. Any other value or omitting it keeps Swagger **off** (no docs route). |
+
+   Optional (see `apps/backend/src/config/app.config.ts` if you need them): `CORS_ORIGINS` (comma-separated; `http://localhost:4200` is always allowed), cookie-related `DEVICE_COOKIE_*` for production-style cookies.
+
+### Swagger (test the API in the browser)
+
+Swagger is **only** available when **`SWAGGER_ENABLED=true`** in `apps/backend/.env`. Restart the server after changing it.
+
+With the default port, open **`http://localhost:8080/api/docs`** (replace the port if `PORT` is different). In Swagger UI, use **Authorize**, set the **`x-api-key`** header to the same value as `X_API_KEY`, then you can execute requests against the API from the UI.
+
+### Run migrations and seed (first time)
+
+```sh
+npm run migration:run
+npm run seed:run
+```
+
+### Build the API
+
+```sh
+npx nx build backend
+```
+
+### Start the API (dev)
+
+```sh
+npx nx serve backend
+```
+
+---
+
+## Frontend (`apps/frontend`)
+
+### Assumptions
+
+- The backend is running and reachable at the URL you set in `VITE_BACKEND_URL` (default `http://localhost:8080`).
+- Dev server uses **port 4200** (see `vite.config.mts`).
+
+### Decisions
+
+- **Vite + React**; env vars exposed to the client must be prefixed with `VITE_`.
+- **Firebase client** config powers in-app messaging; **VAPID** is used for web push. The Vite build can generate `public/firebase-messaging-sw.js` when the Firebase env vars are set.
+
+### Environment file
+
+1. Copy the example file:
+
+   ```sh
+   cp apps/frontend/.env.example apps/frontend/.env
+   ```
+
+2. Edit `apps/frontend/.env`:
+
+   | Variable | What to put |
+   |----------|-------------|
+   | `VITE_BACKEND_URL` | Base URL of the API (e.g. `http://localhost:8080`). No trailing slash needed for typical use. |
+   | `VITE_X_API_KEY` | Same value as backend `X_API_KEY` so the SPA can call the API. |
+   | `VITE_FIREBASE_*` | From Firebase Console → Project settings → Your apps → Web app config (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId). |
+   | `VITE_FIREBASE_VAPID_KEY` | Firebase Console → Cloud Messaging → **Web Push certificates** → Key pair. |
+
+   If Firebase keys are missing, the app may still run for non-push flows; the service worker snippet is skipped until the core Firebase web config is complete.
+
+### Build the SPA
+
+```sh
+npx nx build frontend
+```
+
+### Start the SPA (dev)
+
+```sh
+npx nx dev frontend
+```
+
+Open `http://localhost:4200`.
+
+---
+
+## Useful Nx commands
+
+```sh
+npx nx graph              # dependency graph
+npx nx run backend:test
+npx nx run frontend:test
+```
+
+Root `package.json` also defines `migration:*`, `seed:run`, `build` (backend only), and `start:prod` (backend).

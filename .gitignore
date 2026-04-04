@@ -46,3 +46,6 @@ Thumbs.db
 vite.config.*.timestamp*
 
 .env
+
+# Generated from VITE_FIREBASE_* (see apps/frontend/vite.config.mts); never commit real config.
+apps/frontend/public/firebase-messaging-sw.js

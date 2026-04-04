@@ -82,6 +82,20 @@ Serves `dist/apps/frontend` (default port **4200** in this repo’s Vite config)
 - **Firebase Admin** sends FCM messages; credentials come from env (service account).
 - **API key** auth: clients send `x-api-key`; if `X_API_KEY` is unset in env, the server rejects protected routes (set it for local dev).
 
+### Notifications (FCM) — how it works
+
+There is **no** separate `/notifications` CRUD API. Push notifications are implemented as follows:
+
+1. **Device session** — `GET /api/devices/session` establishes an anonymous device id (HttpOnly cookies).
+2. **FCM registration token** — the client sends the token to `PUT /api/devices/push-token` (or the legacy device-scoped routes under `/api/devices/...`).
+3. **Order placement** — `POST /api/orders` persists the order; on success the server calls **`FcmService.sendOrderPlacedNotification`** (`apps/backend/src/modules/notifications/fcm.service.ts`), which uses **Firebase Admin** to send a web push when credentials and a stored token exist.
+
+So **notifications** are delivered via **FCM** and wired from the **orders** flow, not via a dedicated notifications resource.
+
+### Logging
+
+Successful responses emit **structured JSON** lines to stdout from `LoggingInterceptor` (`level`, `type: http_request`, `method`, `path`, `url`, `statusCode`, `durationMs`, `timestamp`). Errors emit **structured JSON** from `HttpExceptionFilter` (`type: http_error`, same routing fields, `message`, and `stack` only for server-side failures). Suitable for ingestion by Cloud Logging or any log aggregator.
+
 ### Environment file
 
 1. Copy the example file:
@@ -110,6 +124,8 @@ Serves `dist/apps/frontend` (default port **4200** in this repo’s Vite config)
 Swagger is **only** available when **`SWAGGER_ENABLED=true`** in `apps/backend/.env`. Restart the server after changing it.
 
 With the default port, open **`http://localhost:8080/api/docs`** (replace the port if `PORT` is different). In Swagger UI, use **Authorize**, set the **`x-api-key`** header to the same value as `X_API_KEY`, then you can execute requests against the API from the UI.
+
+**API documentation:** Interactive docs are available via **Swagger UI** when enabled (above). This repository does **not** include a Postman collection; you can import the OpenAPI document from Swagger or call the REST endpoints directly.
 
 ### Run migrations and seed (first time)
 
@@ -188,6 +204,20 @@ npx nx run frontend:test
 ```
 
 Root `package.json` also defines `migration:*`, `seed:run`, `build` (backend only), and `start:prod` (backend).
+
+---
+
+## Demo video
+
+If your submission requires a **demo recording**, attach it separately (e.g. link in the submission form or an unlisted video). This repository does **not** embed a demo URL so reviewers are not pointed at a stale or private link.
+
+Suggested coverage: clone → `npm install` → configure `.env` → `npm run migration:run` / `npm run seed:run` → start backend → optional Swagger walkthrough → place an order.
+
+---
+
+## Public deployment URL
+
+This repository **does not** ship a guaranteed public API URL. Run the API **locally** or deploy using the root **`Dockerfile`** and **[docs/gcp-deployment.md](docs/gcp-deployment.md)**. If you deploy Cloud Run (or similar), add your own **stable URL** in your submission cover letter or demo notes—do not commit secrets or environment-specific URLs here unless you intend to maintain them.
 
 ---
 

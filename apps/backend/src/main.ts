@@ -1,6 +1,8 @@
 /**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
+ * NestJS application entrypoint. Loads environment configuration, registers global
+ * middleware (CORS, filters, interceptors), and serves the API under the `api` prefix.
+ * Suitable for local development and container deployment (see repository `Dockerfile`
+ * and `docs/gcp-deployment.md`).
  */
 
 import { Logger } from '@nestjs/common';

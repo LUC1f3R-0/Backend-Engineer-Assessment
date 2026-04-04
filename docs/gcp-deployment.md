@@ -130,6 +130,7 @@ On the Cloud Run service, use **Add connection** to attach the **same** Cloud SQ
 - Region (**Mumbai**) aligns with Cloud SQL for connectivity/latency.
 - Path triggers avoid pointless deploys.
 - Min `0` → watch cold-start latency if it matters.
+- **Logs:** the API writes **structured JSON** lines to stdout (`type: http_request` on success, `type: http_error` on exceptions). Cloud Run captures stdout/stderr into **Cloud Logging** for search and alerting.
 
 ---
 

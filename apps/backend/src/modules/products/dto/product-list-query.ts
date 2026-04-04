@@ -50,7 +50,7 @@ function parsePositiveInt(raw: unknown, fallback: number): number {
 
 /**
  * Validates query parameters for GET /products at the HTTP boundary.
- * Business rules (e.g. max page 8) stay in ProductsService.
+ * `limit` is constrained here (1–8); ProductsService also enforces a max page size of 8.
  */
 export function parseProductListQuery(query: Record<string, unknown>): ParsedProductListQuery {
   const page = parsePositiveInt(query.page, 1);
